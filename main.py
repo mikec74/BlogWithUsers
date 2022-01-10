@@ -19,7 +19,22 @@ ckeditor = CKEditor(app)
 Bootstrap(app)
 
 ##CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///blog.db")
+# The current version of SQLAlchemy uses a URI of "postgresql://" when accessing a PostgreSQL database.
+# Heroku uses a URI of "postgres://". Because of this difference, when running at Heroku, the system
+# crashes because SQLAlchemy cannot connect to a URI of "postgres://". I added the replace() call to change
+# the environment variable returned from Heroku into a URI that can be used by SQLAlchemy. If Heroku ever
+# changes to use "postgresql://" like SQLAlchemy does, then this code should still work since the replace()
+# call will not change the URI. If Heroku ever makes this change, you can remove the call to replace().
+# This code was suggested by a post on StackOverflow:
+#     https://stackoverflow.com/questions/66690321/flask-and-heroku-sqlalchemy-exc-nosuchmoduleerror-cant-load-plugin-sqlalchemy
+#
+# Running the program on my local computer uses a SQLite database. I want to continue to be able to run the
+# program on my computer for development while it is also running on Heroku. This is accomplished by including
+# the DATABASE_URL in an environment variable. The call to replace() has no effect on this URL because the
+# URL on the local computer does not contain "postgres://".
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    "DATABASE_URL",
+).replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
